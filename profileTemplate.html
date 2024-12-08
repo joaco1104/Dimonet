@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Perfil de Usuario</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .botonPerfil {
+            background-color: white;
+            color: #007bff;
+            border: 2px solid #007bff;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 5px;
+            position: absolute;
+            top: 10px;
+            right: 80px;
+        }
+        .botonPerfil:hover {
+            background-color: #e6f0ff;
+        }
+        .cerrarSesion {
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 5px;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .busqueda {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+            position: relative;
+            width: 300px;
+            margin-bottom: 20px;
+        }
+        .barraBusqueda {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .resultados {
+            position: absolute;
+            top: 50px;
+            background-color: white;
+            width: 100%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        .botonUsuario {
+            display: block;
+            padding: 10px;
+            background-color: #f0f0f0;
+            margin: 2px 0;
+            cursor: pointer;
+            text-align: center;
+            border: none;
+            border-radius: 5px;
+        }
+        .botonUsuario:hover {
+            background-color: #e0e0e0;
+        }
+        .perfil {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .perfil img {
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+        .botonSeguir {
+            background: linear-gradient(to right, red, magenta);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+        .botonSeguido {
+            background-color: black;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+        .publicaciones {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .publicaciones img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+        }
+    </style>
+    <script type="module">
+        // Importar las funciones necesarias de los SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+        // Configuración de Firebase de tu proyecto
+        const firebaseConfig = {
+            apiKey: "AIzaSyDHu40OzCyKF48-IlQf2QAdKzK1cxKTUZc",
+            authDomain: "dimonet-591d8.firebaseapp.com",
+            projectId: "dimonet-591d8",
+            storageBucket: "dimonet-591d8.firebaseapp.com",
+            messagingSenderId: "67130114241",
+            appId: "1:67130114241:web:69741f601fd76f7c701440",
+            measurementId: "G-MSGTWREJ18"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function cargarPerfil(nombreUsuario) {
+            try {
+                const docRef = doc(db, "usuarios", nombreUsuario);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const datos = docSnap.data();
+                    document.getElementById("tituloUsuario").innerText = datos.nombre;
+                    document.getElementById("seguidores").innerText = `Seguidores: ${datos.seguidores || 0}`;
+                    document.getElementById("imagenPerfil").src = datos.imagenPerfil || "default.jpg";
+                    cargarPublicaciones(nombreUsuario);
+                } else {
+                    document.getElementById("tituloUsuario").innerText = "Usuario no encontrado";
+                }
+            } catch (error) {
+                console.error("Error al cargar el perfil: ", error);
+            }
+        }
+
+        async function cargarPublicaciones(nombreUsuario) {
+            try {
+                const publicacionesRef = collection(db, "usuarios", nombreUsuario, "publicaciones");
+                const publicacionesSnapshot = await getDocs(publicacionesRef);
+                const contenedorPublicaciones = document.getElementById("contenedorPublicaciones");
+                contenedorPublicaciones.innerHTML = "";
+                publicacionesSnapshot.forEach((doc) => {
+                    const img = document.createElement("img");
+                    img.src = doc.data().url;
+                    contenedorPublicaciones.appendChild(img);
+                });
+            } catch (error) {
+                console.error("Error al cargar las publicaciones: ", error);
+            }
+        }
+
+        async function subirImagenPerfil(event) {
+            const archivo = event.target.files[0];
+            const nombreUsuario = localStorage.getItem("nombreUsuario");
+            if (archivo && nombreUsuario) {
+                try {
+                    const lector = new FileReader();
+                    lector.onload = async function(e) {
+                        const url = e.target.result;
+                        document.getElementById("imagenPerfil").src = url;
+                        const usuarioRef = doc(db, "usuarios", nombreUsuario);
+                        await setDoc(usuarioRef, { imagenPerfil: url }, { merge: true });
+                    };
+                    lector.readAsDataURL(archivo);
+                } catch (error) {
+                    console.error("Error al subir la imagen de perfil: ", error);
+                }
+            }
+        }
+
+        async function subirPublicacion(event) {
+            const archivo = event.target.files[0];
+            const nombreUsuario = localStorage.getItem("nombreUsuario");
+            if (archivo && nombreUsuario) {
+                try {
+                    const lector = new FileReader();
+                    lector.onload = async function(e) {
+                        const url = e.target.result;
+                        const publicacionesRef = collection(db, "usuarios", nombreUsuario, "publicaciones");
+                        const nuevaPublicacion = doc(publicacionesRef);
+                        await setDoc(nuevaPublicacion, { url });
+                        cargarPublicaciones(nombreUsuario);
+                    };
+                    lector.readAsDataURL(archivo);
+                } catch (error) {
+                    console.error("Error al subir la publicación: ", error);
+                }
+            }
+        }
+
+        function cerrarSesion() {
+            localStorage.removeItem("nombreUsuario");
+            window.location.href = "login.html";
+        }
+
+        window.onload = function() {
+            const nombreUsuario = localStorage.getItem("nombreUsuario");
+            if (nombreUsuario) {
+                cargarPerfil(nombreUsuario);
+            } else {
+                window.location.href = "login.html";
+            }
+        };
+    </script>
+</head>
+<body>
+    <button class="botonPerfil" onclick="window.location.href='namepage.html'">Perfil</button>
+    <button class="cerrarSesion" onclick="cerrarSesion()">Cerrar Sesión</button>
+    <div class="busqueda">
+        <input type="text" id="barraBusqueda" class="barraBusqueda" placeholder="Buscar usuarios" onkeyup="buscarUsuarios()">
+        <div id="contenedorResultados" class="resultados"></div>
+    </div>
+    <div class="perfil">
+        <img id="imagenPerfil" src="default.jpg" alt="Foto de perfil" width="100" height="100">
+        <h1 id="tituloUsuario">Cargando...</h1>
+        <span id="seguidores">Seguidores: 0</span>
+        <button id="botonSeguir" class="botonSeguir" onclick="seguirUsuario()">Seguir</button>
+    </div>
+    <hr>
+    <h2>Publicaciones</h2>
+    <div id="contenedorPublicaciones" class="publicaciones"></div>
+</body>
+</html>

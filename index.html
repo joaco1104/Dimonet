@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Crear Cuenta</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .formulario {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .formulario h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .formulario label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        .formulario input[type="text"],
+        .formulario input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .formulario input[type="button"] {
+            width: 100%;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .formulario input[type="button"]:hover {
+            background-color: #0056b3;
+        }
+        .formulario a {
+            display: block;
+            margin-top: 10px;
+            text-align: center;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .formulario a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+      import { getFirestore, collection, getDoc, setDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDHu40OzCyKF48-IlQf2QAdKzK1cxKTUZc",
+        authDomain: "dimonet-591d8.firebaseapp.com",
+        projectId: "dimonet-591d8",
+        storageBucket: "dimonet-591d8.appspot.com",
+        messagingSenderId: "67130114241",
+        appId: "1:67130114241:web:69741f601fd76f7c701440",
+        measurementId: "G-MSGTWREJ18"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      function validarNombreUsuario(nombre) {
+        var regex = /^[a-zA-Z0-9._]{1,20}$/;
+        return regex.test(nombre);
+      }
+
+      async function crearCuenta() {
+        var nombre = document.getElementById("nombre").value;
+        var contrasena = document.getElementById("contrasena").value;
+
+        if (nombre === "" || contrasena === "") {
+          alert("Por favor, completa todos los campos.");
+          return;
+        }
+
+        if (!validarNombreUsuario(nombre)) {
+          alert("El nombre de usuario debe tener hasta 20 caracteres y solo puede contener letras, números, puntos y guiones bajos.");
+          return;
+        }
+
+        try {
+          const usuariosRef = collection(db, "usuarios");
+          const usuarioDoc = doc(usuariosRef, nombre);
+          const docSnap = await getDoc(usuarioDoc);
+
+          if (docSnap.exists()) {
+            alert("El nombre de usuario ya existe. Por favor, elige otro nombre.");
+          } else {
+            await setDoc(usuarioDoc, {
+              nombre: nombre,
+              contrasena: contrasena
+            });
+            localStorage.setItem("nombreUsuario", nombre);
+            window.location.href = "namepage.html";
+          }
+        } catch (error) {
+          console.error("Error al crear la cuenta: ", error);
+          alert("Hubo un error al crear la cuenta. Por favor, intenta de nuevo.");
+        }
+      }
+    </script>
+</head>
+<body>
+    <div class="formulario">
+        <h2>Crear Cuenta</h2>
+        <form>
+            <label for="nombre">Nombre:</label>
+            <input type="text" id="nombre" name="nombre">
+            <label for="contrasena">Contraseña:</label>
+            <input type="password" id="contrasena" name="contrasena">
+            <input type="button" value="Crear Cuenta" onclick="crearCuenta()">
+        </form>
+        <a href="login.html">¿Ya tienes una cuenta? Inicia sesión.</a>
+    </div>
+</body>
+</html>
